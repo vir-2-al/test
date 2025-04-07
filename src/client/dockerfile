@@ -1,0 +1,17 @@
+FROM python:3.12.2-alpine
+LABEL authors="v.lazarev"
+RUN pip3 install --upgrade pip
+
+WORKDIR /opt/app_srv
+
+ADD req.txt req.txt
+RUN pip3 install --no-cache-dir -r req.txt --break-system-packages
+
+COPY config.py config.py
+COPY main.py main.py
+COPY models.py models.py
+COPY req.txt req.txt
+
+ENTRYPOINT ["python3", "main.py"]
+
+EXPOSE 8000

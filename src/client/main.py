@@ -4,7 +4,7 @@ from time import sleep
 
 from httpx import AsyncClient, ASGITransport, Cookies, Timeout, Client, ConnectError
 from fastapi import status
-from config import APP_NET_PORT
+from src.config import APP_NET_PORT
 
 # Create a Cookies object
 cookies = Cookies()
