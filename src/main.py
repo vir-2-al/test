@@ -21,7 +21,7 @@ from authx import AuthX, AuthXConfig, TokenPayload
 
 from models import UserLoginScheme, UserInfoScheme
 from database import Base, UserModel
-from config import (APP_NAME, APP_ORIGINS, APP_SECRET_KEY, APP_COOKIE_NAME, DATABASE_URL, APP_NET_PORT,
+from config import (APP_NAME, APP_ORIGINS, APP_SECRET_KEY, APP_COOKIE_NAME, DATABASE_URL, APP_SRV_PORT,
                     APP_ADMIN_USERNAME, APP_ADMIN_PASSWORD)
 #endregion
 
@@ -39,9 +39,9 @@ logger = async_logging.AsyncLogger(
 )
 
 app = FastAPI(title=APP_NAME,
-              description='This document describe REST API interface.',
-              servers=[{'url': 'http://localhost:8000'}],
-              version='1.0')
+              description="This document describe REST API interface.",
+              servers=[{"url": f"http://localhost:{APP_SRV_PORT}"}],
+              version="1.0")
 
 config = AuthXConfig()
 config.JWT_SECRET_KEY = APP_SECRET_KEY
@@ -79,15 +79,15 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 #region Common
 @app.get("/", include_in_schema=False)
 async def docs_redirect():
-    return RedirectResponse(url='/docs')
+    return RedirectResponse(url="/docs")
 
 @api_v1.post("/init_db",
              dependencies=[Depends(auth.access_token_required)],
-             summary='Prepare database')
+             summary="Prepare database")
 async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(Base.metadata.drop_all)
-        await logger.info(__name__ + '.' + inspect.stack()[0][3])
+        await logger.info(__name__ + "." + inspect.stack()[0][3])
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(
             text("INSERT INTO users (id, username, password) VALUES(:id, :username, :password) ON CONFLICT DO NOTHING"),
@@ -107,10 +107,10 @@ async def login(data: UserLoginScheme,
         token = auth.create_access_token(uid=str(user.id))
         response.delete_cookie(key=config.JWT_ACCESS_COOKIE_NAME)
         response.set_cookie(key=config.JWT_ACCESS_COOKIE_NAME, value=token)
-        await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": username: {data.username}")
+        await logger.info(__name__ + "." + inspect.stack()[0][3] + f": username: {data.username}")
         return {"message": "Login successful"}
     else:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": Invalid credentials for {data.username}")
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": Invalid credentials for {data.username}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
 @api_v1.post("/logout",
@@ -119,7 +119,7 @@ async def login(data: UserLoginScheme,
              dependencies=[Depends(auth.access_token_required)])
 async def logout(response: Response,
                  payload: TokenPayload = Depends(auth.access_token_required)):
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {payload.sub}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {payload.sub}")
 
     response.delete_cookie(key=config.JWT_ACCESS_COOKIE_NAME)
     return {"message": "Logout successful"}
@@ -140,11 +140,11 @@ async def add_user(data: UserLoginScheme,
     try:
         session.add(new_user)
         await session.commit()
-        await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {payload.sub} create username: {data.username}")
+        await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {payload.sub} create username: {data.username}")
         return {"message": "User created"}
     except exc.SQLAlchemyError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'Failed execute. Message: {e}.!')
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed execute. Message: {e}.!")
 
 @api_v1_users.delete("/{uid}",
                summary="Delete user (available only for current user)",
@@ -152,7 +152,7 @@ async def add_user(data: UserLoginScheme,
                dependencies=[Depends(auth.access_token_required)])
 async def del_user(session: SessionDep,
                    response: Response,
-                   uid: int = Path(ge=0, description='User ID'),
+                   uid: int = Path(ge=0, description="User ID"),
                    payload: TokenPayload = Depends(auth.access_token_required)):
     current_uid = int(payload.sub)
     if current_uid != uid:
@@ -161,12 +161,12 @@ async def del_user(session: SessionDep,
         query = delete(UserModel).where(UserModel.id == uid)
         await session.execute(query)
         await session.commit()
-        await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {uid}")
+        await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {uid}")
         response.delete_cookie(key=config.JWT_ACCESS_COOKIE_NAME)
         return {"message": "User deleted"}
     except exc.SQLAlchemyError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'Failed execute. Message: {e}.!')
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed execute. Message: {e}.!")
 
 
 @api_v1_users.get("",
@@ -175,14 +175,14 @@ async def del_user(session: SessionDep,
             dependencies=[Depends(auth.access_token_required)])
 async def get_users(session: SessionDep,
                     payload: TokenPayload = Depends(auth.access_token_required)):
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {payload.sub}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {payload.sub}")
     try:
         query = select(UserModel)
         result = await session.execute(query)
         return {"users": result.scalars().all()}
     except exc.SQLAlchemyError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'Failed execute. Message: {e}.!')
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed execute. Message: {e}.!")
 
 
 @api_v1_users.get("/{uid}",
@@ -190,9 +190,9 @@ async def get_users(session: SessionDep,
             status_code=status.HTTP_200_OK,
             dependencies=[Depends(auth.access_token_required)])
 async def get_user_info(session: SessionDep,
-                        uid: int = Path(ge=0, description='User ID'),
+                        uid: int = Path(ge=0, description="User ID"),
                         payload: TokenPayload = Depends(auth.access_token_required)) -> UserInfoScheme:
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {uid}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {uid}")
     current_uid = int(payload.sub)
     if current_uid != uid:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Incorrent credentials")
@@ -205,8 +205,8 @@ async def get_user_info(session: SessionDep,
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     except exc.SQLAlchemyError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'Failed execute. Message: {e}')
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed execute. Message: {e}")
 
 @api_v1_users.put("/{uid}",
             summary="Update user information (available only for current user)",
@@ -216,7 +216,7 @@ async def set_user_info(data: UserInfoScheme,
                         session: SessionDep,
                         payload: TokenPayload = Depends(auth.access_token_required)):
     current_uid = int(payload.sub)
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {current_uid}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {current_uid}")
     if current_uid != data.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Incorrent credentials")
 
@@ -234,11 +234,11 @@ async def set_user_info(data: UserInfoScheme,
     user.job_title = data.job_title
     try:
         await session.commit()
-        await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": uid: {payload.sub} update username: {data.username}")
+        await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {payload.sub} update username: {data.username}")
         return {"message": "User updated"}
     except exc.SQLAlchemyError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'Failed execute. Message: {e}')
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed execute. Message: {e}")
 #endregion
 
 #region Files
@@ -247,7 +247,7 @@ async def set_user_info(data: UserInfoScheme,
                   status_code=status.HTTP_200_OK,
                   dependencies=[Depends(auth.access_token_required)])
 async def get_files(payload: TokenPayload = Depends(auth.access_token_required)):
-    await logger.info(__name__ + '.' + inspect.stack()[0][3])
+    await logger.info(__name__ + "." + inspect.stack()[0][3])
     try:
         uid = payload.sub
         user_path = f"files/{uid}"
@@ -256,7 +256,7 @@ async def get_files(payload: TokenPayload = Depends(auth.access_token_required))
         files = sorted(os.listdir(user_path))
         return {"files": files}
     except OSError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail={"message": str(e)}) from e
 
 @api_v1_files.post("",
@@ -264,7 +264,7 @@ async def get_files(payload: TokenPayload = Depends(auth.access_token_required))
                    status_code=status.HTTP_201_CREATED,
                    dependencies=[Depends(auth.access_token_required)])
 async def upload_files(files: list[UploadFile] = File(...), payload: TokenPayload = Depends(auth.access_token_required)):
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": files: {files}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": files: {files}")
     try:
         uid = payload.sub
         for file in files:
@@ -276,11 +276,11 @@ async def upload_files(files: list[UploadFile] = File(...), payload: TokenPayloa
 
         return {"message": "Files uploaded successfully"}
     except OSError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail={"message": str(e)}) from e
 
 async def chunk_file(filename: str):
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": filename: {filename}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": filename: {filename}")
     try:
         CHUNK_SIZE = 1 * 1024 * 1024        # = 1MB - default chunk size
         async with aiofiles.open(filename, "rb") as file:
@@ -288,14 +288,14 @@ async def chunk_file(filename: str):
                 yield chunk
 
     except OSError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
 
 @api_v1_files.get("/{filename}",
                   summary="Download files",
                   dependencies=[Depends(auth.access_token_required)])
-async def download_file(filename: str = Path(min_length=1, max_length=255, description='File name'),
+async def download_file(filename: str = Path(min_length=1, max_length=255, description="File name"),
                         payload: TokenPayload = Depends(auth.access_token_required)):
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + f": filename: {filename}")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + f": filename: {filename}")
     try:
         uid = payload.sub
         full_path_name = f"files/{uid}/{filename}"
@@ -304,17 +304,17 @@ async def download_file(filename: str = Path(min_length=1, max_length=255, descr
         media_type, _ = mimetypes.guess_type(full_path_name)
         return StreamingResponse(chunk_file(full_path_name), media_type=media_type)
     except OSError as e:
-        await logger.error(__name__ + '.' + inspect.stack()[0][3] + f": {e}")
+        await logger.error(__name__ + "." + inspect.stack()[0][3] + f": {e}")
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail={"message": str(e)}) from e
 #endregion
 
 @app.on_event("startup")
 async def startup_database():
-    await logger.info(__name__ + '.' + inspect.stack()[0][3])
+    await logger.info(__name__ + "." + inspect.stack()[0][3])
 
 @app.on_event("shutdown")
 async def shutdown_database():
-    await logger.info(__name__ + '.' + inspect.stack()[0][3])
+    await logger.info(__name__ + "." + inspect.stack()[0][3])
 
 app.include_router(api_v1)
 app.include_router(api_v1_users)
@@ -323,12 +323,12 @@ app.include_router(api_v1_files)
 async def main():
     import uvicorn
 
-    await logger.info(__name__ + '.' + inspect.stack()[0][3] + ": start")
+    await logger.info(__name__ + "." + inspect.stack()[0][3] + ": start")
     mimetypes.init()
     await init_db()
-    uvicorn.run("main:app", host="0.0.0.0", port=APP_NET_PORT,
+    uvicorn.run("main:app", host="0.0.0.0", port=APP_SRV_PORT,
                 workers=1, reload=True, headers=[("server", "x-server")]
-    )
+                )
 
 if __name__ == "__main__":
     asyncio.run(main())

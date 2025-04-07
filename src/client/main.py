@@ -4,14 +4,17 @@ from time import sleep
 
 from httpx import AsyncClient, ASGITransport, Cookies, Timeout, Client, ConnectError
 from fastapi import status
-from src.config import APP_NET_PORT
+#from src.config import APP_SRV_HOST, APP_SRV_PORT
 
 # Create a Cookies object
 cookies = Cookies()
 timeout = Timeout(5.0)
 
+APP_SRV_HOST = "test_srv_app"
+APP_SRV_PORT = 8000
+
 APP_NAME = "WEB app client"
-SRV_BASE_URL = f"http://localhost:{APP_NET_PORT}"
+SRV_BASE_URL = f"http://{APP_SRV_HOST}:{APP_SRV_PORT}"
 
 
 def srv_login(username: str, password: str) -> (bool, str):
@@ -37,14 +40,7 @@ def srv_login(username: str, password: str) -> (bool, str):
 def srv_upload(filename: str) -> (bool, str):
     with Client(base_url=SRV_BASE_URL) as client:
         try:
-            # with open(filename, 'rb') as f:
-            #     response = client.post(url="api/v1/files",
-            #                            files={'file': (filename, f)},
-            #                            cookies=cookies
-            #                            )
-
-            files = [('file', open(filename, 'rb'))]
-            # files = {'file': open(filename, 'rb')}
+            files = [("file", open(filename, "rb"))]
             response = client.post(url="api/v1/files",
                                    headers={"Content-Type": "application/json"},
                                    files=files,
@@ -303,6 +299,6 @@ def page_register(page: ft.Page):
 
 if __name__ == "__main__":
     # ft.app(target=page_login)
-    ft.app(target=page_login, port=8550, view=ft.WEB_BROWSER)
+    ft.app(target=page_login, port=9000, view=ft.WEB_BROWSER)
 
 

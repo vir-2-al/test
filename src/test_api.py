@@ -1,11 +1,11 @@
 import pytest
 from httpx import AsyncClient, ASGITransport, Cookies, Timeout
 from fastapi import status
-from config import APP_NET_PORT
+from config import APP_SRV_PORT
 
 from main import app
 
-APP_BASE_URL = f"http://localhost:{APP_NET_PORT}"
+APP_BASE_URL = f"http://localhost:{APP_SRV_PORT}"
 
 # Create a Cookies object
 cookies = Cookies()
