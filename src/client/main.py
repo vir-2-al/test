@@ -11,8 +11,8 @@ from authx import AuthX, AuthXConfig, TokenPayload
 cookies = Cookies()
 timeout = Timeout(5.0)
 
-APP_SRV_HOST = "localhost"
-# APP_SRV_HOST = "test_srv_app"
+# APP_SRV_HOST = "localhost"
+APP_SRV_HOST = "test_srv_app"
 APP_SRV_PORT = 8000
 
 APP_NAME = "WEB app client"

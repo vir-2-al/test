@@ -7,10 +7,7 @@ WORKDIR /opt/app_cln
 ADD req.txt req.txt
 RUN pip3 install --no-cache-dir -r req.txt --break-system-packages
 
-# COPY config.py config.py
 COPY main.py main.py
-# COPY models.py models.py
-# COPY req.txt req.txt
 
 ENTRYPOINT ["python3", "main.py"]
 
