@@ -194,6 +194,8 @@ async def get_user_info(session: SessionDep,
                         payload: TokenPayload = Depends(auth.access_token_required)) -> UserInfoScheme:
     await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {uid}")
     current_uid = int(payload.sub)
+    if uid == 0:
+        uid = current_uid
     if current_uid != uid:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Incorrent credentials")
     try:
@@ -216,6 +218,8 @@ async def set_user_info(data: UserInfoScheme,
                         session: SessionDep,
                         payload: TokenPayload = Depends(auth.access_token_required)):
     current_uid = int(payload.sub)
+    if data.id == 0:
+        data.id = current_uid
     await logger.info(__name__ + "." + inspect.stack()[0][3] + f": uid: {current_uid}")
     if current_uid != data.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Incorrent credentials")

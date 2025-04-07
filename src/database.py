@@ -6,7 +6,7 @@ class Base(DeclarativeBase):
 class UserModel(Base):
     __tablename__ = "users"
     id          : Mapped[int] = mapped_column(primary_key=True)
-    username    : Mapped[str] = mapped_column(nullable=False)
+    username    : Mapped[str] = mapped_column(nullable=False, unique=True)
     password    : Mapped[str] = mapped_column(nullable=False)
     first_name  : Mapped[str] = mapped_column(nullable=True)
     middle_name : Mapped[str] = mapped_column(nullable=True)
