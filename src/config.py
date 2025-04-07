@@ -1,10 +1,12 @@
 APP_NAME = "WEB-APP"
-APP_NET_PORT = 8000
+# APP_SRV_HOST = "localhost"
+APP_SRV_HOST = "test_srv_app"
+APP_SRV_PORT = 8000
 APP_ORIGINS = [
     "http://localhost",
-    f"http://localhost:{APP_NET_PORT}",
+    f"http://localhost:{APP_SRV_PORT}",
     "http://127.0.0.1",
-    f"http://127.0.0.1:{APP_NET_PORT}",
+    f"http://127.0.0.1:{APP_SRV_PORT}",
     "null"
 ]
 
@@ -15,5 +17,6 @@ APP_ADMIN_USERNAME = "admin"
 APP_ADMIN_PASSWORD = "password"
 # DB_SRV_HOST = "localhost"
 DB_SRV_HOST = "test_srv_db"
+
 
 DATABASE_URL = f"postgresql+asyncpg://postgres:postgres@{DB_SRV_HOST}/postgres"
